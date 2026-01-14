@@ -6,6 +6,7 @@ import {
   RestProxyController,
   GraphQLProxyController,
   AuthProxyController,
+  McpProxyController,
 } from './controllers';
 import { ProxyService } from './services';
 
@@ -31,6 +32,7 @@ import { ProxyService } from './services';
     PaymentsProxyController,  // /payments/*
     RestProxyController,      // /api/*
     GraphQLProxyController,   // /graphql
+    McpProxyController,       // /mcp/* - Pilar 3
   ],
   providers: [ProxyService],
   exports: [ProxyService],

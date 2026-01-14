@@ -202,4 +202,123 @@ export class ProxyService {
       HttpStatus.BAD_GATEWAY,
     );
   }
+
+  /**
+   * Proxea un request directamente a una URL (versión simple para MCP)
+   * 
+   * @param req - Request original de Express
+   * @param res - Response de Express
+   * @param targetUrl - URL completa del servicio destino
+   */
+  async proxyRequest(
+    req: Request,
+    res: any,
+    targetUrl: string,
+  ): Promise<void> {
+    const method = req.method as Method;
+    const headers = this.extractHeaders(req);
+    const requestId = headers['x-request-id'];
+
+    this.logger.debug(
+      `[${requestId}] Proxying ${method} ${targetUrl}`,
+    );
+
+    try {
+      const response = await firstValueFrom(
+        this.httpService.request({
+          url: targetUrl,
+          method,
+          headers,
+          data: req.body,
+          params: req.query,
+          timeout: this.timeoutMs,
+          validateStatus: () => true,
+        }).pipe(
+          timeout(this.timeoutMs),
+          catchError((error: AxiosError) => {
+            this.logger.error(
+              `[${requestId}] Error proxying to ${targetUrl}: ${error.message}`,
+            );
+            throw this.handleAxiosError(error, 'proxy');
+          }),
+        ),
+      );
+
+      // Enviar respuesta
+      res.status(response.status);
+      res.set(response.headers);
+      res.json(response.data);
+
+    } catch (error) {
+      this.logger.error(
+        `Proxy error: ${error.message}`,
+        error.stack,
+      );
+      throw error;
+    }
+  }
+
+  /**
+   * Proxea un request multipart (con archivos) a un servicio backend
+   * 
+   * @param req - Request original de Express
+   * @param res - Response de Express
+   * @param targetUrl - URL completa del servicio destino
+   * @param file - Archivo subido (opcional)
+   */
+  async proxyMultipartRequest(
+    req: Request,
+    res: any,
+    targetUrl: string,
+    file?: any,
+  ): Promise<void> {
+    try {
+      const FormData = require('form-data');
+      const formData = new FormData();
+
+      // Añadir campos del body
+      for (const [key, value] of Object.entries(req.body)) {
+        formData.append(key, value);
+      }
+
+      // Añadir archivo si existe
+      if (file) {
+        formData.append('image', file.buffer, {
+          filename: file.originalname,
+          contentType: file.mimetype,
+        });
+      }
+
+      // Extraer headers
+      const headers = this.extractHeaders(req);
+
+      // Realizar request
+      const response = await firstValueFrom(
+        this.httpService.post(targetUrl, formData, {
+          headers: {
+            ...headers,
+            ...formData.getHeaders(),
+          },
+          timeout: this.timeoutMs,
+        }).pipe(
+          timeout(this.timeoutMs),
+          catchError((error: AxiosError) => {
+            throw this.handleAxiosError(error, 'multipart-proxy');
+          }),
+        ),
+      );
+
+      // Enviar respuesta
+      res.status(response.status);
+      res.set(response.headers);
+      res.json(response.data);
+
+    } catch (error) {
+      this.logger.error(
+        `Multipart proxy error: ${error.message}`,
+        error.stack,
+      );
+      throw error;
+    }
+  }
 }
