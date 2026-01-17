@@ -40,7 +40,8 @@ export class ProxyService {
       graphql: this.configService.get<string>('GRAPHQL_API_URL', 'http://localhost:8000'),
       payments: this.configService.get<string>('PAYMENTS_API_URL', 'http://localhost:8001'),
       websocket: this.configService.get<string>('WEBSOCKET_API_URL', 'http://localhost:4000'),
-      auth: this.configService.get<string>('AUTH_SERVICE_URL', 'http://localhost:3002'),
+      auth: this.configService.get<string>('AUTH_SERVICE_URL', 'http://localhost:8090'),
+      mcp: this.configService.get<string>('MCP_SERVICE_URL', 'http://localhost:8002'),
     };
 
     return urlMap[serviceName.toLowerCase()] || '';
