@@ -16,10 +16,6 @@ import { Public } from '../../auth/decorators';
  * Controlador Proxy para Payments Service
  * 
  * Ruta: /payments/* → Payments Microservice (:8001)
- * 
- * Implementa el Pilar 2 de la rúbrica:
- * - Wrapper del servicio de pago
- * - Routing a través del API Gateway
  */
 @ApiTags('Payments Proxy')
 @Controller('payments')
